@@ -36,7 +36,6 @@ class Settings:
             return local.resolve()
         path = Path(os.getenv("JOBHUNT_JOBS_CSV", str(BASE / "samples" / "jobs.csv")))
         return path.resolve()
-        self.jobs_csv: str = str(BASE / "samples" / "jobs.csv")
 
     @property
     def llm_enabled(self) -> bool:
