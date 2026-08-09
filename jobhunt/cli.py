@@ -35,6 +35,8 @@ def _demo(csv_path: str, out: str, limit: int) -> int:
         except Exception as exc:  # pragma: no cover
             print(f"  ! {_ascii(job.company)} / {_ascii(job.title)}: {exc}")
             continue
+        tracker().upsert(job.id, job.company, job.title, job.url,
+                         "ready", resume_pdf=bundle.resume_pdf)
         print(_ascii(summarize(job, profile, ev)))
     print(f"processed {len(jobs)} jobs -> {Path(out) / 'applications'}")
     return 0
