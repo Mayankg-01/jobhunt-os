@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import sys
+import threading
 from pathlib import Path
 
 from .agents import generate, summarize
@@ -34,16 +35,56 @@ def _demo(csv_path: str, out: str, limit: int) -> int:
 
 
 def _serve(host: str, port: int) -> int:
-    import threading
+    import time
+    import urllib.request
+
+    def _alive() -> bool:
+        try:
+            with urllib.request.urlopen(f"http://{host}:{port}/health", timeout=1) as r:
+                return r.status == 200
+        except Exception:
+            return False
 
     def _open():
         import webbrowser
         webbrowser.open(f"http://{host}:{port}/")
-    threading.Timer(1.5, _open).start()
+
+    if _alive():
+        # something is already serving on this port — just open the browser
+        threading.Timer(0.2, _open).start()
+        print(f"jobhunt already running at http://{host}:{port}/")
+        return 0
+
     import uvicorn
     from .api import app
-    uvicorn.run(app, host=host, port=port)
+
+    t = threading.Timer(0.2, lambda: _sync_open(host, port))
+    t.daemon = True
+    t.start()
+
+    print(f"jobhunt workspace -> http://{host}:{port}/   (Ctrl+C to stop)")
+    try:
+        uvicorn.run(app, host=host, port=port, log_level="warning")
+    except OSError as exc:
+        print(f"could not bind {host}:{port} — {exc}")
+        return 1
     return 0
+
+
+def _sync_open(host: str, port: int) -> None:
+    """Open the browser only once the app is actually responding."""
+    import time
+    import urllib.request
+    for _ in range(40):  # ~20s budget for cold start
+        try:
+            with urllib.request.urlopen(f"http://{host}:{port}/health", timeout=1) as r:
+                if r.status == 200:
+                    import webbrowser
+                    webbrowser.open(f"http://{host}:{port}/")
+                    return
+        except Exception:
+            pass
+        time.sleep(0.5)
 
 
 def _build(company: str, title: str, keywords: str, url: str = "") -> int:
@@ -67,7 +108,7 @@ def _apply(company: str, title: str) -> int:
     bundle, ev = generate(profile, job, Path(SETTINGS.data_dir) / "applications")
     sheet = one_click(profile, job, bundle, copy=True, open_page=True)
     tracker().upsert(job.id, company, title, job.url, "ready", resume_pdf=bundle.resume_pdf)
-    print(f"staged {company} · {title} -> opened page, cover on clipboard, status=ready")
+    print(f"staged {company} | {title} -> opened page, cover on clipboard, status=ready")
     print(json.dumps(sheet, indent=2))
     return job.id
 
@@ -76,7 +117,7 @@ def _track(cmd: str, job_id: str, status: str | None) -> int:
     tr = tracker()
     if cmd == "list":
         for r in tr.list():
-            print(f"{r.get('status','?'):12} {r['job_id']}  {r['company']} — {r['title']}")
+            print(f"{r.get('status','?'):12} {r['job_id']}  {r['company']} - {r['title']}")
         return 0
     if cmd == "set":
         row = tr.set_status(job_id, status)
