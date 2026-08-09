@@ -1,0 +1,58 @@
+{
+  "name": "Alex Morgan",
+  "headline": "AI Engineer building agentic AI that ships",
+  "location": "Remote — EU",
+  "email": "alex.morgan.dev@example.com",
+  "phone": "+1 000 000 0000",
+  "github": "https://github.com/alexmorgan-dev",
+  "linkedin": "https://www.linkedin.com/in/alexmorgan-dev",
+  "summary": "AI Engineer designing agentic AI workflows and multi-agent systems in production. Built a RAG research assistant with citations, a 95%-accurate log classifier that cut LLM spend 93%, and a medical vision model at 99% accuracy / 0.99 macro F1. B.S. CS.",
+  "skills": {
+    "languages": ["Python", "TypeScript", "C++", "SQL"],
+    "agentic": ["LangChain", "LangGraph", "LiteLLM", "FastAPI", "Pydantic", "OpenAI API"],
+    "ml": ["TensorFlow", "Keras", "scikit-learn", "OpenCV", "PyTorch"],
+    "data": ["Pandas", "NumPy", "Matplotlib", "Seaborn", "PostgreSQL", "ChromaDB", "Sentence-Transformers"],
+    "ops": ["Docker", "GitHub Actions", "MLOps", "AIOps", "FastAPI", "Flask"]
+  },
+  "experience": [
+    {
+      "title": "AI Engineer",
+      "company": "Aurora Systems",
+      "period": "2024 — present",
+      "location": "Remote",
+      "bullets": [
+        "Design agentic AI workflows & multi-agent systems with LangChain, LangGraph, LiteLLM wrapped in FastAPI microservices that run in production",
+        "Build Pydantic-validated services that talk to multi-modal LLMs without the fear-of-production moment",
+        "Practice MLOps, AIOps and Agentic DevOps so a model that never deploys stays a science experiment"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "AI Wildlife Insights Assistant",
+      "desc": "RAG research assistant that answers questions about dense ecology papers with citations; multi-turn memory, 4-doc targeted retrieval, ChromaDB embeddings.",
+      "tags": ["RAG", "LangChain", "ChromaDB", "OpenAI", "FastAPI", "Python"]
+    },
+    {
+      "name": "AI/ML Log Classification System",
+      "desc": "Three-stage hybrid (regex -> sentence-transformer -> LLM), 95% accuracy, LLM spend cut 93%, 10x faster; 2,410+ patterns; FastAPI service.",
+      "tags": ["FastAPI", "scikit-learn", "Sentence-Transformers", "PostgreSQL", "LLM"]
+    },
+    {
+      "name": "NeuroScan — Brain Tumor Classification",
+      "desc": "Transfer learning on 7,000+ MRI slices, four tumor classes, 99% accuracy and 0.99 macro F1, wrapped in a Flask app for real-time use.",
+      "tags": ["TensorFlow", "Keras", "OpenCV", "Flask", "Computer Vision"]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Computer Science",
+      "school": "Example University",
+      "period": "2021 — 2025"
+    }
+  ],
+  "achievements": [
+    "600+ DSA problems solved",
+    "Fine-tuning LLMs and vision models for production"
+  ]
+}

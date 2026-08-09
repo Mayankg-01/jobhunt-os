@@ -1,0 +1,6 @@
+rank,score,company,title,location,platform,url
+1,39.0,acme-corp,"Member of Technical Staff, Agent Code",Remote,example,https://careers.example.com/jobs/agent-code
+2,33.0,acme-corp,"Audio Inference Engineer, Model Efficiency",New York,example,https://careers.example.com/jobs/efficiency
+3,30.0,northwind,"Staff ML Engineer, GenAI Foundations",Remote,example,https://careers.example.com/jobs/genai-foundations
+4,29.0,orionlabs,"AI Engineer, Agentic Systems",US - Remote,example,https://careers.example.com/jobs/agentic
+5,28.0,bluepeak,"ML Engineer II, Computer Vision",Remote US,example,https://careers.example.com/jobs/cv-engineer

@@ -1,0 +1,17 @@
+# Render blueprint — one click to deploy the public self-serve builder.
+# https://render.com → “New Blueprint” → this repo → deploy on push (fresh).
+services:
+  - type: web
+    name: jobhunt-os
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      # Public builder is open at "/"; the owner pipeline (/apply dashboard)
+      # and /api/build* calls require this token and are never exposed.
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: JOBHUNT_DATA
+        value: /data
+      - key: OPENAI_API_KEY
+        sync: false

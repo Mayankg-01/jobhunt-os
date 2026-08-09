@@ -1,0 +1,11 @@
+# Local runtime state — never commit personal applications / resumes
+data/
+
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.env
+.env.local
