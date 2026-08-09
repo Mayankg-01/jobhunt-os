@@ -34,6 +34,12 @@ def _demo(csv_path: str, out: str, limit: int) -> int:
 
 
 def _serve(host: str, port: int) -> int:
+    import threading
+
+    def _open():
+        import webbrowser
+        webbrowser.open(f"http://{host}:{port}/")
+    threading.Timer(1.5, _open).start()
     import uvicorn
     from .api import app
     uvicorn.run(app, host=host, port=port)

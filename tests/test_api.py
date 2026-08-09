@@ -62,7 +62,40 @@ def test_apply_endpoint_stages_and_tracks(client, monkeypatch):
 
 
 def test_dashboard_renders(client):
-    resp = client.get("/apply")
+    resp = client.get("/")
     assert resp.status_code == 200
-    assert "one click apply" in resp.text
-    assert "navigator.clipboard" in resp.text
+    assert "jobhunt · workspace" in resp.text
+    assert "extract jobs" in resp.text
+
+
+def test_jobs_list_uses_shortlist_csv(client):
+    resp = client.get("/api/jobs")
+    assert resp.status_code == 200
+    jobs = resp.json()["jobs"]
+    assert jobs and all("fit" in j and "title" in j for j in jobs)
+    assert any("Agent" in j["title"] for j in jobs)
+
+
+def test_jobs_can_be_imported_via_csv(client):
+    csv = "rank,score,company,title,location,url\n1,50,greenwave,ML Engineer,Remote,https://x"
+    resp = client.post("/api/jobs", json={"csv": csv})
+    assert resp.status_code == 200
+    titles = [j["title"] for j in resp.json()["jobs"]]
+    assert "ML Engineer" in titles
+
+
+class _FakeResp:
+    def raise_for_status(self):
+        pass
+    text = "<title>Senior Agentic AI Engineer — Acme</title>\n<p>job body</p>"
+
+
+def test_job_pull_extracts_posting(client, monkeypatch):
+    import jobhunt.api as api_mod
+    monkeypatch.setattr(api_mod.httpx, "get", lambda *a, **k: _FakeResp())
+    resp = client.post("/api/jobs/pull", json={"url": "https://jobs.example.com/123"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "Agentic AI Engineer" in body["title"]
+    assert body["company"] == "Example"
+    assert "agent" in body["keywords"]

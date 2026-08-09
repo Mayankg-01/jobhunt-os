@@ -22,23 +22,23 @@ stat it can't back, misses your contact info, or runs long on a DM.
 ```bash
 pip install -e .            # or: pip install -e ".[dev]" for tests
 
-# Build a bundle for every shortlisted job (CSV from job-scout; defaults to
-# your real list in data/jobs.csv when present)
-python -m jobhunt demo --limit 8
-
-# Or build one bundle on demand
-python -m jobhunt build --company cohere --title "Member of Technical Staff, Agent Code" --keywords "langchain,rag,llm,fastapi"
-
-# Run the API  (health, /api/build, /api/resume/{id}, dashboard at /apply)
+# The complete local workspace — one dashboard does everything. Boots the
+# server and opens http://127.0.0.1:8020/ in your browser automatically.
 python -m jobhunt serve
 
-# One-click apply: opens the posting, stages the cover letter on your clipboard,
-# and logs the application — the final submit stays human, by design.
-python -m jobhunt apply --company cohere --title "Member of Technical Staff, Agent Code"
+# Workflow in the workspace dashboard:
+#   1. extract jobs   — paste a posting URL (extracts title/company/keywords)
+#                       or drop in your job-scout CSV (rank,score,company,title,...)
+#   2. shortlist      — fit % per role, straight off your real résumé
+#   3. bundle + apply — build the cover letter + LinkedIn DM + tailored résumé,
+#                       then one-click apply: open the posting, copy cover/DM,
+#                       email draft, track status (ready → applied → interviewing)
 
-# Application pipeline ledger
+# CLI keeps working headlessly:
+python -m jobhunt demo --limit 8          # batch-build every shortlisted job
+python -m jobhunt build --company cohere --title "Member of Technical Staff, Agent Code" --keywords "langchain,rag,llm,fastapi"
+python -m jobhunt apply --company cohere --title "Member of Technical Staff, Agent Code"
 python -m jobhunt track list
-python -m jobhunt track set --job 22f3c0... --status interviewing
 ```
 
 Common outputs land in `data/applications/<job_id>/` (PDF + HTML + artifacts).
@@ -60,35 +60,40 @@ ToS and gets accounts flagged, so this stays permissioned:
 | Résumé PDF | landing in `data/applications/<job_id>/resume.pdf` |
 | Status ledger | `data/applications.jsonl` after each stage |
 
-Dashboard at `/apply` (run `serve`): page ↗, copy cover, copy DM, résumé ↗
+Dashboard at `/` (run `serve`): page ↗, copy cover, copy DM, résumé ↗
 buttons per row. Statuses update live from the tracker.
 
 ## Self-serve bundle builder (public)
 
-The front door is **you**: anyone can land on `/`, paste their own profile
-(JSON) + a posting, and receive a tailored cover letter, LinkedIn DM, and
-ATS-ready résumé PDF — all generated from *their* data, nothing persisted,
+Optional add-on for anyone else: the self-serve builder at `/builder` — paste
+your own profile (JSON) + a posting, receive a tailored cover letter, LinkedIn
+DM, and ATS-ready résumé PDF. Generated from *their* data, nothing persisted,
 nothing fabricated. No owner data is exposed.
 
 | Endpoint | Scope |
 |----------|-------|
-| `GET /` | Landing + builder UI |
+| `GET /builder` | Self-serve builder UI |
 | `POST /api/self` | `{profile, job}` → cover, DM, résumé PDF/HTML, mailto |
 | `GET /bundles/{run}/*` | the visitor's generated artifacts |
 | `/health` | uptime probe |
 
-The owner pipeline (`/api/build`, `/api/applications`, `/apply` dashboard) is
-behind `ADMIN_TOKEN` — set it in the environment or in your deploy config, and
-those endpoints return `401` without `?token=` / `Authorization: Bearer`.
+The owner pipeline (workspace `/`, `/api/build`, `/api/jobs`, `/api/apply`) is
+behind `ADMIN_TOKEN` when set — without a token it's open on localhost only.
+Set `ADMIN_TOKEN` in the environment and those endpoints return `401` without
+`?token=` / `Authorization: Bearer`.
 
-## Deploy to the public
+## Deploy to the public (optional)
 
 1. Push this repo to GitHub.
 2. **Render (free):** create a blueprint from `render.yaml` in this repo.
    Render builds the Dockerfile, injects a generated `ADMIN_TOKEN`, runs
-   `HEALTHCHECK` against `/health`, and serves the builder.
+   `HEALTHCHECK` against `/health`.
 3. Or run anywhere Docker runs: `docker run -p 8020:8020 -v data:/data jobhunt-os`
    (set `-e OPENAI_API_KEY=...` to sharpen research angles).
+
+The full workspace (job extraction, scoring, one-click apply, tracker) is
+designed to run **locally** — `python -m jobhunt serve` — since the apply
+steps (browser open, clipboard) are tied to your machine.
 
 ## Optional LLM credibility boost
 
