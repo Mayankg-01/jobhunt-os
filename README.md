@@ -1,123 +1,200 @@
 # JobHunt OS
 
-A production-grade, agentic **job application engine**. It turns a job posting
-into a complete, ATS-friendly application bundle — tailored résumé (PDF + HTML),
-cover letter, and a LinkedIn opener — every word verified against what's really
-on your résumé, so nothing is ever fabricated.
+> **AI-native job hunt operating system** — Resume tailoring, outreach automation, interview prep, and pipeline tracking. All in one CLI.
 
-Built to be **honest**: the eval layer refuses to ship a bundle that claims a
-stat it can't back, misses your contact info, or runs long on a DM.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://docker.com)
 
-## What's in a bundle
+## Features
 
-| Artifact        | What it does                                              |
-|-----------------|-----------------------------------------------------------|
-| `résumé` (PDF+HTML) | Single-column, ATS-friendly, requirements-first ordering |
-| Cover letter    | Real projects, real numbers, tailored per posting        |
-| LinkedIn DM     | Short (<320 ch) opener for recruiters                     |
-| Evaluation      | Fit %, gaps, and a pass/fail gate before you submit      |
+| Engine | Capabilities |
+|--------|--------------|
+| **Resume** | JD-parsing → AI tailoring → Quality gate (13 checks) → PDF/DOCX generation |
+| **Outreach** | LinkedIn connect + message drafting → Queued sending → Follow-up automation |
+| **Interview** | Company research → Technical topics → STAR stories → Daily briefs |
+| **Pipeline** | Application tracking → Status workflow → Analytics → Google Sheets sync |
+| **Search** | Multi-source (LinkedIn, Indeed, Glassdoor, Google) → Scheduled searches → Local storage |
 
-## Quickstart
+## Quick Start
+
+### Option 1: Local Install (Recommended)
 
 ```bash
-pip install -e .            # or: pip install -e ".[dev]" for tests
+# Clone and install
+git clone https://github.com/yourusername/jobhunt-os
+cd jobhunt-os
+pip install -e ".[dev]"
 
-# The complete local workspace — one dashboard does everything. Boots the
-# server and opens http://127.0.0.1:8020/ in your browser automatically.
-python -m jobhunt serve
+# Configure
+cp .env.example .env
+# Edit .env with your API keys
 
-# Workflow in the workspace dashboard:
-#   1. extract jobs   — paste a posting URL (extracts title/company/keywords)
-#                       or drop in your job-scout CSV (rank,score,company,title,...)
-#   2. shortlist      — fit % per role, straight off your real résumé
-#   3. bundle + apply — build the cover letter + LinkedIn DM + tailored résumé,
-#                       then one-click apply: open the posting, copy cover/DM,
-#                       email draft, track status (ready → applied → interviewing)
+# Initialize database
+jobhunt db init
 
-# CLI keeps working headlessly:
-python -m jobhunt demo --limit 8          # batch-build every shortlisted job
-python -m jobhunt build --company cohere --title "Member of Technical Staff, Agent Code" --keywords "langchain,rag,llm,fastapi"
-python -m jobhunt apply --company cohere --title "Member of Technical Staff, Agent Code"
-python -m jobhunt track list
+# Create your profile
+jobhunt profile create
+
+# Start hunting!
+jobhunt search run "Senior Python Engineer" --location "San Francisco" --remote
+jobhunt resume tailor ~/resume.pdf "paste job description here"
+jobhunt outreach draft "Jane Smith" "Acme Corp" --title "Engineering Manager"
+jobhunt interview prep "Acme Corp" "Senior Python Engineer"
+jobhunt pipeline summary
 ```
 
-Common outputs land in `data/applications/<job_id>/` (PDF + HTML + artifacts).
-Applications are tracked in `data/applications.jsonl`
-(`preparing → ready → applied → interviewing → offer | closed → archived`).
+### Option 2: Docker (Production)
 
-## Apply pipeline (one-click apply)
+```bash
+# Configure
+cp .env.example .env
+# Edit .env with your values
+# Generate secure password: openssl rand -hex 32
 
-Every application is staged so the **only** human action on the employer's
-portal is the final submit — auto-submitting violates Greenhouse/Lever/LinkedIn
-ToS and gets accounts flagged, so this stays permissioned:
+# Start stack
+cd infrastructure
+docker compose up -d
 
-| Piece | What the OS does |
-|-------|------------------|
-| Open the posting | `webbrowser` fires the role page in one click |
-| Copy the cover letter | staged on the clipboard via `Set-Clipboard` |
-| Copy the LinkedIn DM | ready to paste into the recruiter inbox |
-| `mailto:` link | whole letter pre-filled, ready to send |
-| Résumé PDF | landing in `data/applications/<job_id>/resume.pdf` |
-| Status ledger | `data/applications.jsonl` after each stage |
+# Run commands inside container
+docker exec -it jobhunt-os jobhunt profile create
+docker exec -it jobhunt-os jobhunt search run "Senior Python Engineer"
+```
 
-Dashboard at `/` (run `serve`): page ↗, copy cover, copy DM, résumé ↗
-buttons per row. Statuses update live from the tracker.
+## Commands Overview
 
-## Self-serve bundle builder (public)
+```bash
+# Profile management
+jobhunt profile show
+jobhunt profile create --interactive
 
-Optional add-on for anyone else: the self-serve builder at `/builder` — paste
-your own profile (JSON) + a posting, receive a tailored cover letter, LinkedIn
-DM, and ATS-ready résumé PDF. Generated from *their* data, nothing persisted,
-nothing fabricated. No owner data is exposed.
+# Resume tailoring
+jobhunt resume tailor resume.pdf "Job description..."
+jobhunt resume parse resume.pdf
+jobhunt resume quality tailored_resume.json "Job description..."
 
-| Endpoint | Scope |
-|----------|-------|
-| `GET /builder` | Self-serve builder UI |
-| `POST /api/self` | `{profile, job}` → cover, DM, résumé PDF/HTML, mailto |
-| `GET /bundles/{run}/*` | the visitor's generated artifacts |
-| `/health` | uptime probe |
+# Job search
+jobhunt search run "Python Engineer" --location "NYC" --remote --save --name "python-nyc"
+jobhunt search list --limit 50 --company "Google"
 
-The owner pipeline (workspace `/`, `/api/build`, `/api/jobs`, `/api/apply`) is
-behind `ADMIN_TOKEN` when set — without a token it's open on localhost only.
-Set `ADMIN_TOKEN` in the environment and those endpoints return `401` without
-`?token=` / `Authorization: Bearer`.
+# Outreach automation
+jobhunt outreach draft "John Doe" "Acme Corp" --title "Hiring Manager" --job "Senior Engineer"
+jobhunt outreach queue <app-id> <contact-id> "Connection note" --followup "Follow up message"
+jobhunt outreach send --max 10
+jobhunt outreach followups
 
-## Deploy to the public (optional)
+# Interview prep
+jobhunt interview prep "Acme Corp" "Senior Engineer" --round technical
+jobhunt interview brief <prep-id>
+jobhunt interview list
 
-1. Push this repo to GitHub.
-2. **Render (free):** create a blueprint from `render.yaml` in this repo.
-   Render builds the Dockerfile, injects a generated `ADMIN_TOKEN`, runs
-   `HEALTHCHECK` against `/health`.
-3. Or run anywhere Docker runs: `docker run -p 8020:8020 -v data:/data jobhunt-os`
-   (set `-e OPENAI_API_KEY=...` to sharpen research angles).
+# Pipeline tracking
+jobhunt pipeline summary
+jobhunt pipeline list --status applied
+jobhunt pipeline detail <app-id>
+jobhunt pipeline update <app-id> phone_screen --salary 180000
+jobhunt pipeline export --format csv
+jobhunt pipeline sync-sheets
 
-The full workspace (job extraction, scoring, one-click apply, tracker) is
-designed to run **locally** — `python -m jobhunt serve` — since the apply
-steps (browser open, clipboard) are tied to your machine.
+# Company & contact management
+jobhunt company add "Acme Corp" --domain acme.com --industry "FinTech"
+jobhunt company contact "Acme Corp" "Jane Smith" --title "Eng Manager" --email "jane@acme.com"
 
-## Optional LLM credibility boost
+# Database
+jobhunt db init
+jobhunt db reset --yes
+```
 
-Set `OPENAI_API_KEY` (see `.env.example`). With a key we use a real model to
-sharpen research angles; without it, everything still works via deterministic,
-fact-safe templates — nothing fabricates numbers either way.
+## Configuration
 
-## Evaluation (does it clear the gate?)
+### Required
+- **AI Provider**: OpenAI, Anthropic, or OpenRouter API key in `.env`
 
-`tests/` lock the behavior (`pytest`):
+### Optional
+- **LinkedIn**: Enable with `JH_LI_ENABLED=true` and add `li_at` cookie
+- **Google Sheets**: Enable with `JH_GOOGLE_ENABLED=true` and service account credentials
+- **PostgreSQL**: Use `JH_DB_TYPE=postgresql` for production
 
-- `fit_score >= 0.6` before a bundle is "submittable"
-- contact info must appear in the résumé
-- four sections (`Summary/Skills/Experience/Projects`) must exist
-- **no fabricated statistics** — percentages not in your real record are flagged
-- LinkedIn DM must stay ≤320 characters
+## Architecture
 
-## Run everywhere
+```
+jobhunt-os/
+├── src/jobhunt/
+│   ├── core/          # Config, models, settings
+│   ├── engines/       # Resume, Outreach, Interview, Pipeline, Search
+│   ├── storage/       # SQLAlchemy models, repositories
+│   ├── cli/           # Typer CLI commands
+│   └── utils/         # AI client, helpers
+├── infrastructure/    # Docker, Docker Compose
+├── tests/             # Pytest suite
+└── landing/           # Marketing page (GitHub Pages)
+```
 
-- **Docker**: `docker build -t jobhunt-os . && docker run -p 8020:8020 jobhunt-os`
-- **CI**: `.github/workflows/ci.yml` runs the suite on every push.
+## Data Privacy
 
-## Wish list (add weight-bearing)
+- **Local-first**: SQLite by default, your data never leaves your machine
+- **No telemetry**: Zero tracking, no analytics
+- **Credentials**: Stored in `.env` (gitignored) or OS keyring
+- **LinkedIn**: Uses your own session cookie, no third-party access
 
-- [ ] Tailor PDF page per job title in file header
-- [ ] Rate each bundle for years-of-experience alignment
-- [x] Pipeline status tracker (applied / interviewed / offer)
+## Deployment
+
+### GitHub Pages (Landing Page)
+The `landing/` folder deploys automatically to GitHub Pages via Actions.
+
+### Docker Production
+```bash
+# Server setup
+docker compose -f infrastructure/docker-compose.yml up -d
+
+# Scheduled searches (cron or systemd)
+docker exec jobhunt-scheduler jobhunt search run "your queries"
+```
+
+## Development
+
+```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Lint
+ruff check .
+ruff format .
+
+# Type check
+mypy src/
+```
+
+## Roadmap
+
+- [ ] Web dashboard (FastAPI + React)
+- [ ] Email outreach (Gmail/Outlook API)
+- [ ] Resume versioning & A/B testing
+- [ ] Interview scheduler integration (Calendly)
+- [ ] Salary negotiation coach
+- [ ] Multi-user support for teams
+
+## License
+
+MIT — See [LICENSE](LICENSE) for details.
+
+## Contributing
+
+1. Fork the repo
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a PR
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/yourusername/jobhunt-os/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/jobhunt-os/discussions)
+- **Email**: mittal.shreya91@gmail.com
+
+---
+
+Built with ❤️ by [Shreya Mittal](https://linkedin.com/in/shreya-mittal-65404b4b)

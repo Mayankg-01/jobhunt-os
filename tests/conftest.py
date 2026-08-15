@@ -1,51 +1,23 @@
-import sys
-import tempfile
-from pathlib import Path
-
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-# Hermetic data dir so the tracker/bundle tests never touch the repo's real data/
-_TESTS_TMP = tempfile.mkdtemp(prefix="jobhunt-tests-")
-import os
-
-os.environ.setdefault("JOBHUNT_DATA", _TESTS_TMP)
-
-from jobhunt.domain import JobPosting, Profile
-from jobhunt.profile import load_profile
-
-SAMPLE = Path(__file__).resolve().parents[1] / "samples" / "profile.json"
+from jobhunt.core.models import Base
+from jobhunt.storage.database import get_engine, get_session_factory
 
 
-@pytest.fixture()
-def profile() -> Profile:
-    return load_profile(SAMPLE)
+@pytest.fixture(scope="session")
+def test_engine():
+    engine = create_engine("sqlite:///:memory:", echo=False)
+    Base.metadata.create_all(engine)
+    yield engine
+    Base.metadata.drop_all(engine)
 
 
-@pytest.fixture()
-def job() -> JobPosting:
-    return JobPosting(
-        id="t",
-        company="Acme",
-        title="Applied AI Engineer",
-        keywords=["langchain", "rag", "llm", "fastapi", "python"],
-    )
-
-
-@pytest.fixture()
-def bundle():
-    from jobhunt.domain import ApplicationBundle
-    return ApplicationBundle(
-        resume_pdf="data/applications/t/resume.pdf",
-        resume_html="<p>resume</p>",
-        cover_letter="Dear Acme, my RAG pipeline cut retrieval latency 40%.",
-        linkedin_dm="Hi Acme, saw the AI Engineer role — I've shipped RAG at scale.",
-    )
-
-
-@pytest.fixture()
-def client():
-    from fastapi.testclient import TestClient
-    from jobhunt.api import app
-    return TestClient(app)
+@pytest.fixture
+def test_session(test_engine):
+    Session = sessionmaker(bind=test_engine, expire_on_commit=False)
+    session = Session()
+    yield session
+    session.rollback()
+    session.close()
