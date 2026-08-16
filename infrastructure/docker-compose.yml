@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  jobhunt:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+    container_name: jobhunt-os
+    environment:
+      - JH_DB_TYPE=postgresql
+      - JH_DB_HOST=postgres
+      - JH_DB_PORT=5432
+      - JH_DB_USERNAME=jobhunt
+      - JH_DB_PASSWORD=${POSTGRES_PASSWORD}
+      - JH_DB_NAME=jobhunt
+      - JH_AI_PROVIDER=${AI_PROVIDER:-openai}
+      - JH_AI_API_KEY=${AI_API_KEY}
+      - JH_AI_MODEL=${AI_MODEL:-gpt-4o}
+      - JH_LI_ENABLED=${LINKEDIN_ENABLED:-false}
+      - JH_LI_LI_AT_COOKIE=${LINKEDIN_LI_AT_COOKIE}
+      - JH_GOOGLE_ENABLED=${GOOGLE_ENABLED:-false}
+      - JH_GOOGLE_CREDENTIALS_FILE=/app/credentials/google_credentials.json
+      - JH_GOOGLE_TOKEN_FILE=/app/credentials/google_token.json
+      - JH_GOOGLE_SHEETS_ID=${GOOGLE_SHEETS_ID}
+    volumes:
+      - jobhunt-data:/app/data
+      - ./credentials:/app/credentials:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    command: ["tail", "-f", "/dev/null"]
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: jobhunt-postgres
+    environment:
+      - POSTGRES_USER=jobhunt
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=jobhunt
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobhunt"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile
+    container_name: jobhunt-scheduler
+    environment:
+      - JH_DB_TYPE=postgresql
+      - JH_DB_HOST=postgres
+      - JH_DB_PORT=5432
+      - JH_DB_USERNAME=jobhunt
+      - JH_DB_PASSWORD=${POSTGRES_PASSWORD}
+      - JH_DB_NAME=jobhunt
+      - JH_AI_PROVIDER=${AI_PROVIDER:-openai}
+      - JH_AI_API_KEY=${AI_API_KEY}
+      - JH_AI_MODEL=${AI_MODEL:-gpt-4o}
+      - JH_LI_ENABLED=${LINKEDIN_ENABLED:-false}
+      - JH_LI_LI_AT_COOKIE=${LINKEDIN_LI_AT_COOKIE}
+    volumes:
+      - jobhunt-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    command: ["python", "-m", "jobhunt.cli.main", "scheduler", "run"]
+
+volumes:
+  jobhunt-data:
+  postgres-data:

@@ -1,30 +1,131 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "jobhunt-os"
-version = "0.3.0"
-description = "JobHunt OS — agentic application engine that turns job postings into tailored, ATS-ready application bundles"
+version = "0.1.0"
+description = "AI-native job hunt operating system - resume tailoring, outreach automation, interview prep"
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Shreya Mittal", email = "mittal.shreya91@gmail.com"}
+]
+keywords = ["job-search", "resume", "ai", "cli", "career", "linkedin"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+]
 dependencies = [
-    "fastapi>=0.110",
-    "uvicorn[standard]>=0.29",
+    "typer[all]>=0.9",
+    "rich>=13.7",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "python-dotenv>=1.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "openai>=1.30",
+    "anthropic>=0.25",
     "httpx>=0.27",
-    "requests>=2.31",
-    "reportlab>=4.0",
+    "python-docx>=1.1",
+    "docx2pdf>=0.1.8",
+    "pdfplumber>=0.11",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.2",
+    "jobspy>=0.31",
+    "pandas>=2.2",
+    "pyyaml>=6.0",
+    "click>=8.1",
+    "structlog>=24.1",
+    "tenacity>=8.2",
+    "pydantic-extra-types>=2.7",
+    "email-validator>=2.1",
+    "python-dateutil>=2.9",
+    "croniter>=2.0",
+    "apscheduler>=3.10",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.4", "pytest-cov>=4.1"]
-
-[tool.setuptools.packages.find]
-include = ["jobhunt*"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-q"
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "pytest-mock>=3.14",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+]
+linkedin = [
+    "playwright>=1.44",
+    "undetected-chromedriver>=3.5",
+]
+web = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "jinja2>=3.1",
+]
+google = [
+    "google-auth>=2.30",
+    "google-auth-oauthlib>=1.2",
+    "google-auth-httplib2>=0.2",
+    "google-api-python-client>=2.120",
+    "gspread>=6.0",
+]
 
 [project.scripts]
-jobhunt = "jobhunt.cli:main"
+jobhunt = "jobhunt.cli.main:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["jobhunt*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "DTZ", "T20", "PYI", "PT", "Q", "S", "SIM", "TID", "TRY", "PD", "RUF", "RET", "ERA", "PL", "ARG", "PTH", "FURB", "LOG", "TCH", "NPY", "PERF", "PIE", "T10", "ISC", "ICN", "BLE", "FLY", "A", "C90", "EXE", "TID", "TRY"]
+ignore = ["S101", "S311", "B008", "B011", "T201", "T203", "TRY003", "ARG001", "ARG002", "PTH118", "PTH120", "PD011", "RUF012", "RET504", "ERA001", "PLW0602", "NPY002"]
+fixable = ["F", "I", "N", "W", "UP", "B", "C4", "DTZ", "T20", "PYI", "S", "SIM", "TID", "TRY", "PD", "RUF", "RET", "ERA", "PL", "ARG", "PTH", "FURB", "LOG", "TCH", "NPY", "PERF", "PIE", "T10", "ISC", "ICN", "BLE", "FLY", "A", "C90", "EXE"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = true
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["src/jobhunt"]
+omit = ["*/tests/*", "*/conftest.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
